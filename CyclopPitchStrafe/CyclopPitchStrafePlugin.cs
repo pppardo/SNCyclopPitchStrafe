@@ -37,6 +37,7 @@ namespace pppardo.CyclopPitchStrafe
             logger = BepInEx.Logging.Logger.CreateLogSource(pluginSort);
             logger.LogInfo("Inicializando Plugin "+ pluginName + " " + versionString);
             harmony.PatchAll(typeof(SubControlPatch));
+            harmony.PatchAll(typeof(PlayerPatch));
             logger.LogInfo(string.Join(",", harmony.GetPatchedMethods()));
             logger.LogInfo("Parcheado.");
 

@@ -48,16 +48,16 @@ namespace pppardo.CyclopPitchStrafe {
             try {
 
                 if (__instance == null) return;
-                CyclopPitchStrafePlugin.logger.LogInfo(string.Format("__instance No nula."));
+                //CyclopPitchStrafePlugin.logger.LogInfo(string.Format("__instance No nula."));
 
                 if (!__instance.LOD.IsFull()) return;
-                CyclopPitchStrafePlugin.logger.LogInfo(string.Format("LOD full."));
+                //CyclopPitchStrafePlugin.logger.LogInfo(string.Format("LOD full."));
 
                 if (__instance.powerRelay.GetPowerStatus() == PowerSystem.Status.Offline) return;
-                CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Power online."));
+                //CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Power online."));
 
                 if (Ocean.GetDepthOf(__instance.gameObject) <= 0f) return;
-                CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Submerged."));
+                //CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Submerged."));
 
                 //Vector3 throttle = (Vector3)_throttleInfo.GetValue(__instance);
 
@@ -71,7 +71,7 @@ namespace pppardo.CyclopPitchStrafe {
                 
                 bool canAccel = (bool)_canAccelInfo.GetValue(__instance);
                 if (strafing) {
-                    CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Strafing."));
+                    //CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Strafing."));
 
                     float num = __instance.BaseVerticalAccel;
                     num += (float)__instance.gameObject.GetComponentsInChildren<BallastWeight>().Length * __instance.AccelPerBallast;
@@ -80,11 +80,11 @@ namespace pppardo.CyclopPitchStrafe {
                     }
                 }
                 if (pitching) {
-                    CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Pitching."));
+                    //CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Pitching."));
                     Stabilizer stabilizer = __instance.GetComponent<Stabilizer>();
                     if (stabilizer != null) {
                         stabilizer.stabilizerEnabled = false;
-                        CyclopPitchStrafePlugin.logger.LogInfo(string.Format("DesActivando estabilizador"));
+                        //CyclopPitchStrafePlugin.logger.LogInfo(string.Format("DesActivando estabilizador"));
                     } else {
                         CyclopPitchStrafePlugin.logger.LogInfo(string.Format("No se ha encontrado estabilizador para desactivar."));
                     }
@@ -144,7 +144,7 @@ namespace pppardo.CyclopPitchStrafe {
                 Stabilizer stabilizer = __instance.GetComponent<Stabilizer>();
                 if (stabilizer != null) {
                     stabilizer.stabilizerEnabled = true;
-                    CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Activando estabilizador"));
+                    //CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Activando estabilizador"));
                 } else {
                     CyclopPitchStrafePlugin.logger.LogInfo(string.Format("No se ha encontrado estabilizador."));
 
@@ -152,4 +152,23 @@ namespace pppardo.CyclopPitchStrafe {
             }
         }
     } // Fin de la clase
+    /// <summary>
+    /// Parcheo de la clase Player para el boton de estabilización de emergencia
+    /// </summary>
+    [HarmonyPatch(typeof(Player))]
+    public static class PlayerPatch {
+    [HarmonyPatch(typeof(Player), "Update")]
+    [HarmonyPostfix]
+    public static void UpdatePlayerPostfix(Player __instance) {
+            if (__instance.isPiloting)
+                return;
+            if (__instance.IsInSubmarine()) {
+                Stabilizer stabilizer = __instance.currentSub.GetComponent<Stabilizer>();
+                if (!stabilizer.stabilizerEnabled && KeyHandler.Stabilizer) {
+                    stabilizer.stabilizerEnabled = true;
+                    CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Activando estabilizador de emergencia."));
+                }
+            }
+        }
+    }
 }
