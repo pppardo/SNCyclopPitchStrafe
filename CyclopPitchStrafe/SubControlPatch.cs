@@ -18,7 +18,8 @@ namespace pppardo.CyclopPitchStrafe {
         private static readonly FieldInfo _throttleInfo = GetPrivateSubControlMemberInfo("throttle");
         private static readonly FieldInfo _canAccelInfo = GetPrivateSubControlMemberInfo("canAccel");
         private static readonly FieldInfo _subInfo = GetPrivateSubControlMemberInfo("sub");
-        
+
+
         private static FieldInfo GetPrivateSubControlMemberInfo(string _memberName) {
             //CyclopPitchStrafePlugin.logger.LogDebug("[Cyclop Strafe plugin] Obteniendo info del metodo " + _memberName);
             return typeof(SubControl).GetField(_memberName, BindingFlags.Instance | BindingFlags.NonPublic);
@@ -36,12 +37,17 @@ namespace pppardo.CyclopPitchStrafe {
             if(!auxiliarSubControls.TryGetValue(instance, out var patch)){
                 patch=new SubControlPatch();
                 auxiliarSubControls.Add(instance, patch);
-                CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Se a añadido un control auxiliar. Total:{0}",auxiliarSubControls.Count));
+                CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Auxiliar control added. Total:{0}",auxiliarSubControls.Count));
             }
             return patch;
         }
 
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="__instance"></param>
         [HarmonyPatch(typeof(SubControl), "FixedUpdate")]
         [HarmonyPostfix]
         public static void FixedUpdatePost(SubControl __instance) { // Se ejecuta después de cada ejecución de FixedUpdate ( Ajuste de la actualización ) 
@@ -64,7 +70,7 @@ namespace pppardo.CyclopPitchStrafe {
                 Rigidbody rb = __instance.GetComponent<Rigidbody>();
                
                 // Control is moving
-                //if ((double)Mathf.Abs(throttle.x) <= 0.0001)
+                //if ((double)Mathf.Abs(throttle.inclinacion) <= 0.0001)
                 //    return;
                 
                 SubControlPatch aux = getAuxControl(__instance);
@@ -86,7 +92,7 @@ namespace pppardo.CyclopPitchStrafe {
                         stabilizer.stabilizerEnabled = false;
                         //CyclopPitchStrafePlugin.logger.LogInfo(string.Format("DesActivando estabilizador"));
                     } else {
-                        CyclopPitchStrafePlugin.logger.LogInfo(string.Format("No se ha encontrado estabilizador para desactivar."));
+                        CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Stabilizer to disable not found."));
                     }
                     float baseTurningTorque = __instance.BaseTurningTorque;
                     SubRoot _sub = (SubRoot)_subInfo.GetValue(__instance);
@@ -104,11 +110,21 @@ namespace pppardo.CyclopPitchStrafe {
             // Fin 
         }
 
-        /// <summary>
-        /// Parchea el método Update que se llama en cada Frame
-        /// </summary>
-        /// <param name="__instance"></param>    Objeto original
         [HarmonyPatch(typeof(SubControl), "Update")]
+        [HarmonyPrefix]
+        public static bool UpdatePre(SubControl __instance) {
+            if (KeyHandler.CancelMovement) {
+                GameInput.ClearInput();
+            }
+
+            return true;
+        }
+
+            /// <summary>
+            /// Parchea el método Update que se llama en cada Frame
+            /// </summary>
+            /// <param name="__instance"></param>    Objeto original
+            [HarmonyPatch(typeof(SubControl), "Update")]
         [HarmonyPostfix]
         public static void UpdatePost(SubControl __instance) {
 
@@ -143,10 +159,9 @@ namespace pppardo.CyclopPitchStrafe {
             if (KeyHandler.Stabilizer) {
                 Stabilizer stabilizer = __instance.GetComponent<Stabilizer>();
                 if (stabilizer != null) {
-                    stabilizer.stabilizerEnabled = true;
-                    //CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Activando estabilizador"));
+                    StabilizerPatch.EmergencyStablilicerEnable(stabilizer);
                 } else {
-                    CyclopPitchStrafePlugin.logger.LogInfo(string.Format("No se ha encontrado estabilizador."));
+                    CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Stabilizer not found."));
 
                 }
             }
@@ -157,18 +172,86 @@ namespace pppardo.CyclopPitchStrafe {
     /// </summary>
     [HarmonyPatch(typeof(Player))]
     public static class PlayerPatch {
-    [HarmonyPatch(typeof(Player), "Update")]
-    [HarmonyPostfix]
-    public static void UpdatePlayerPostfix(Player __instance) {
+        [HarmonyPatch(typeof(Player), "Update")]
+        [HarmonyPostfix]
+        public static void UpdatePlayerPostfix(Player __instance) {
             if (__instance.isPiloting)
                 return;
             if (__instance.IsInSubmarine()) {
                 Stabilizer stabilizer = __instance.currentSub.GetComponent<Stabilizer>();
                 if (!stabilizer.stabilizerEnabled && KeyHandler.Stabilizer) {
-                    stabilizer.stabilizerEnabled = true;
-                    CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Activando estabilizador de emergencia."));
+                    StabilizerPatch.EmergencyStablilicerEnable(stabilizer);
                 }
             }
         }
     }
+
+    /// <summary>
+    /// Parcheo de la clase Stabilizer para restablecer la aceleración
+    /// </summary>
+    [HarmonyPatch(typeof(Stabilizer))]
+    public static class StabilizerPatch {
+        [HarmonyPatch(typeof(Stabilizer), "FixedUpdate")]
+        [HarmonyPostfix]
+        public static void UpdatePlayerPostfix(Stabilizer __instance) {
+            if (!__instance.stabilizerEnabled || __instance.body == null || __instance.body.isKinematic) 
+                return;
+            if (__instance.uprightAccelerationStiffness != 10f && Mathf.Abs(Mathf.DeltaAngle(__instance.body.transform.eulerAngles.x,0f))<0.001f) {
+                __instance.uprightAccelerationStiffness = 10f;
+                CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Reset stabilizer.({0})", __instance.uprightAccelerationStiffness));
+            }
+        }
+        public static void EmergencyStablilicerEnable(Stabilizer stabilizer) {
+            stabilizer.stabilizerEnabled = true;
+            stabilizer.uprightAccelerationStiffness = CyclopPitchStrafePlugin.MyConfig.StabilizerSpeed;
+            CyclopPitchStrafePlugin.logger.LogInfo(string.Format("Activating emergency stabilizer.({0})", CyclopPitchStrafePlugin.MyConfig.StabilizerSpeed));
+        }
+    }
+
+
+    /// <summary>
+    /// Parcheo para indicar la inclinación
+    /// </summary>
+    [HarmonyPatch(typeof(CyclopsHelmHUDManager))]
+    public static class CyclopsHelmHUDManagerPatch {
+        private static readonly FieldInfo _gyroSpinSpeed = typeof(Stabilizer).GetField("gyroSpinSpeed", BindingFlags.Instance | BindingFlags.NonPublic);
+        private static int i = 0;
+        [HarmonyPatch(typeof(CyclopsHelmHUDManager), "Update")]
+        [HarmonyPostfix]
+        public static void UpdatePostfix(CyclopsHelmHUDManager __instance) {
+            if (!__instance.LOD.IsFull())
+                    return;
+            if (__instance.subLiveMixin.IsAlive()) {
+                /*if (i++ > 60) {
+                    i = 0;
+                    CyclopPitchStrafePlugin.logger.LogInfo(string.Format("1 de 60-Actualizando Icon"));
+                }*/
+                float z = __instance.subRoot.rb.transform.eulerAngles.z;
+                float inclinacion = __instance.subRoot.rb.transform.eulerAngles.x;
+                if (Mathf.Abs(180-z) < 90) { // Inverted
+                    inclinacion = z - inclinacion;
+                }
+                
+                //if (i == 60) CyclopPitchStrafePlugin.logger.LogInfo(string.Format("1 de 60-Actualizando Icon Inclinacion({0})",inclinacion));
+                //GameObject.Find("Landscape/Global Root/Cyclops-MainPrefab(Clone)/HelmHUD/HelmHUDVisuals/Canvas_LeftStatusHUD/SubIconWarnings/");
+                if (i == 60) {
+                    var t = __instance.gameObject.transform;
+                    for (int i = 0; i < t.childCount; i++) {
+                        CyclopPitchStrafePlugin.logger.LogInfo(string.Format("1 de 60-Actualizando Icon Child({0})= {1}", i, t.GetChild(i).name));
+                    }
+                    GameObject gameObject = t.Find("HelmHUDVisuals").gameObject;
+                    CyclopPitchStrafePlugin.logger.LogInfo(string.Format("1 de 60-Actualizando Icon HelmHUDVisuals nulo {0}", gameObject==null));
+                    gameObject = t.Find("HelmHUDVisuals/Canvas_LeftStatusHUD/SubIconWarnings/SubIcon").gameObject;
+                    CyclopPitchStrafePlugin.logger.LogInfo(string.Format("1 de 60-Actualizando Icon SubIcon nulo {0}", gameObject==null));
+                }
+                GameObject subIcon = __instance.gameObject.transform.Find("HelmHUDVisuals/Canvas_LeftStatusHUD/SubIconWarnings/SubIcon").gameObject;
+                if (i == 60) CyclopPitchStrafePlugin.logger.LogInfo(string.Format("1 de 60-Actualizando Icon subIcon encontrado {0}",subIcon!=null));
+                RectTransform rectTransform = subIcon.GetComponent<RectTransform>();
+                if (i == 60) CyclopPitchStrafePlugin.logger.LogInfo(string.Format("1 de 60-Actualizando Icon RectTransform encontrado ({0})", rectTransform!=null));
+                rectTransform.localEulerAngles = new Vector3(0,0, 360-inclinacion);
+
+            }
+        }
+    }
+
 }

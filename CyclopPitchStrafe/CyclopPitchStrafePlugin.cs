@@ -38,6 +38,8 @@ namespace pppardo.CyclopPitchStrafe
             logger.LogInfo("Inicializando Plugin "+ pluginName + " " + versionString);
             harmony.PatchAll(typeof(SubControlPatch));
             harmony.PatchAll(typeof(PlayerPatch));
+            harmony.PatchAll(typeof(CyclopsHelmHUDManagerPatch));
+            harmony.PatchAll(typeof(StabilizerPatch));
             logger.LogInfo(string.Join(",", harmony.GetPatchedMethods()));
             logger.LogInfo("Parcheado.");
 
@@ -57,22 +59,29 @@ namespace pppardo.CyclopPitchStrafe
         public KeyCode StrafeModifierKey = KeyCode.LeftShift;
 
         [Toggle("Use modifier?")]
-        public bool UseModifier = false;
+        public bool UseModifier = true;
+
+        [Toggle("Modifier cancel normal movement?")]
+        public bool ModifierCancel = true;
 
         [Keybind("Left")]
-        public KeyCode StrafeLeftKey = KeyCode.LeftArrow;
+        public KeyCode StrafeLeftKey = KeyCode.A; //KeyCode.LeftArrow;
         
         [Keybind("Right")]
-        public KeyCode StrafeRightKey = KeyCode.RightArrow;
+        public KeyCode StrafeRightKey = KeyCode.D;  //KeyCode.RightArrow;
 
         [Keybind("Stabilizer")]
-        public KeyCode Stabilizer = KeyCode.Keypad0;
+        public KeyCode Stabilizer =  KeyCode.PageDown;
+
+        [Slider("Emergency Stabilizer Accelerator", Format = "{0:F2}", Min = 10f, Max = 1000f, DefaultValue = 100f, Step = 10f)]
+        public float StabilizerSpeed = 100f;
+
 
         [Keybind("PitchUp")]
-        public KeyCode PitchUpKey = KeyCode.UpArrow;
+        public KeyCode PitchUpKey = KeyCode.S; //KeyCode.UpArrow;
 
         [Keybind("PitchDown")]
-        public KeyCode PitchDowntKey = KeyCode.DownArrow;
+        public KeyCode PitchDowntKey = KeyCode.W;//KeyCode.DownArrow;
     }
 
     public static class KeyHandler {
@@ -92,5 +101,8 @@ namespace pppardo.CyclopPitchStrafe
         public static bool PitchDown => _Active && _PitchDown;
 
         public static bool Stabilizer => GameInput.GetKey(CyclopPitchStrafePlugin.MyConfig.Stabilizer);
+
+        public static bool CancelMovement => _Active && CyclopPitchStrafePlugin.MyConfig.ModifierCancel;
+
     }
 }
