@@ -113,6 +113,12 @@ namespace pppardo.CyclopPitchStrafe {
         [HarmonyPatch(typeof(SubControl), "Update")]
         [HarmonyPrefix]
         public static bool UpdatePre(SubControl __instance) {
+            if (__instance == null) return true;
+
+            if (!__instance.LOD.IsFull()) return true;
+
+            if (__instance.controlMode != SubControl.Mode.DirectInput) return true;
+
             if (KeyHandler.CancelMovement) {
                 GameInput.ClearInput();
             }

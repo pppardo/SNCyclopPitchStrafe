@@ -102,7 +102,7 @@ namespace pppardo.CyclopPitchStrafe
 
         public static bool Stabilizer => GameInput.GetKey(CyclopPitchStrafePlugin.MyConfig.Stabilizer);
 
-        public static bool CancelMovement => _Active && CyclopPitchStrafePlugin.MyConfig.ModifierCancel;
+        public static bool CancelMovement => _Active && CyclopPitchStrafePlugin.MyConfig.ModifierCancel && (_StrafeLeft|| _StrafeRight|| _PitchUp || _PitchDown);
 
     }
 }
