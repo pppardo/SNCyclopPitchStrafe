@@ -80,6 +80,8 @@
   </PropertyGroup>
   <PropertyGroup>
     <PostBuildEvent>mkdir "$(ProjectDir)\..\plugins\$(TargetName)"
-copy /Y "$(TargetPath)" "$(ProjectDir)\..\plugins\$(TargetName)"</PostBuildEvent>
+copy /Y "$(TargetPath)" "$(ProjectDir)\..\plugins\$(TargetName)"
+copy /Y "$(TargetPath)" "$(ProjectDir)\mod\$(TargetName)"
+</PostBuildEvent>
   </PropertyGroup>
 </Project>
