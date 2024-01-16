@@ -44,8 +44,8 @@
     <Reference Include="BepInEx">
       <HintPath>$(ProjectDir)\..\Dependencies\BepInEx.dll</HintPath>
     </Reference>
-    <Reference Include="SMLHelper">
-      <HintPath>$(ProjectDir)\..\Dependencies\SMLHelper.dll</HintPath>
+    <Reference Include="Nautilus">
+      <HintPath>..\Dependencies\Nautilus.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -63,9 +63,6 @@
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
       <HintPath>$(ProjectDir)\..\Dependencies\UnityEngine.PhysicsModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.UI">
-      <HintPath>$(ProjectDir)\..\Dependencies\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

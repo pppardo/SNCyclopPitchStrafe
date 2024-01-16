@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
-using SMLHelper.V2.Json;
-using SMLHelper.V2.Options.Attributes;
-using SMLHelper.V2.Handlers;
+using Nautilus.Json;
+using Nautilus.Options.Attributes;
+using Nautilus.Handlers;
 using UnityEngine;
 using System.Reflection;
 using System.Collections;
@@ -24,7 +24,7 @@ namespace pppardo.CyclopPitchStrafe
         private const string pluginSort = "CyclopPitchStrafe";
         private const string versionString = "1.0.0";
 
-        internal static Config MyConfig { get; } = OptionsPanelHandler.Main.RegisterModOptions<Config>();
+        internal static Config MyConfig { get; } = OptionsPanelHandler.RegisterModOptions<Config>();
 
         public static bool IsError{ get; set; }
 
