@@ -140,12 +140,8 @@ namespace pppardo.CyclopPitchStrafe {
 
             if (__instance.controlMode != SubControl.Mode.DirectInput) return;
 
-            SubControlPatch aux = getAuxControl(__instance);
             strafing = false;
             pitching = false;
-
-            var canAccel = (bool)_canAccelInfo.GetValue(__instance);
-            //var throttle = (Vector3)_throttleInfo.GetValue(__instance);
 
             if (KeyHandler.StrafeLeft) {
                 strafe = -1f;
@@ -161,7 +157,6 @@ namespace pppardo.CyclopPitchStrafe {
                 pitch = 1f;
                 pitching = true;
             }
-            //_throttleInfo.SetValue(__instance, throttle);
             if (KeyHandler.Stabilizer) {
                 Stabilizer stabilizer = __instance.GetComponent<Stabilizer>();
                 if (stabilizer != null) {
